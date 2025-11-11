@@ -1,4 +1,3 @@
-const { response } = require("express")
 const log = require("../../utils/log")
 const GoogleSheetService = require("../sheet/google_sheet.service")
 const googleSheetService = new GoogleSheetService()

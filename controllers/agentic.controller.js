@@ -1,16 +1,16 @@
-const IntentService = require('../services/test/intent.service')
+const AgenticService = require('../services/test/agentic.service')
 const testSession = require('../session/session')
-const intentService = new IntentService()
+const agenticService = new AgenticService()
 const log = require('../utils/log')
 const { v4: uuidv4 } = require('uuid')
 
-class intentController {
+class agenticController {
   async testCreate(req, res) {
-    const { sheetID, total } = req.body
+    const { sheetID, sheet } = req.body
     try {
       const sessionId = uuidv4()
-      intentService.testCreate(sheetID ,sessionId, total)
-      testSession.setSession(sessionId, {sessionId, type: 'intent', sheetID: sheetID, total, status: 'created', stopped: false, createdAt: new Date().toISOString()})
+      agenticService.testCreate(sheetID ,sessionId, sheet )
+      testSession.setSession(sessionId, {sessionId, sheetID: sheetID, type: 'agentic', total, status: 'created', stopped: false, createdAt: new Date().toISOString()})
         res.json({
           message: 'Success',
           sessionId: sessionId,
@@ -18,7 +18,7 @@ class intentController {
     } catch (e) {
       log.error({
         sessionId: sessionId,
-        error: 'Controller: intentController ' + e?.message,
+        error: 'Controller: agenticController ' + e?.message,
       })
       res.status(500).json({ massage: 'Internal Server Error' })
     }
@@ -38,7 +38,7 @@ class intentController {
       }
     } catch (e) {
       log.error({
-        error: 'Controller: intentController ' + e?.message,
+        error: 'Controller: agenticController ' + e?.message,
       })
       res.status(500).json({ massage: ' Internal Server Error' })
     }
@@ -59,7 +59,7 @@ class intentController {
       }
     } catch (e) {
       log.error({
-        error: 'Controller: intentController ' + e?.message,
+        error: 'Controller: agenticController ' + e?.message,
       })
       res.status(500).json({ massage: ' Internal Server Error' })
     }

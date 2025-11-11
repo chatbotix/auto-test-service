@@ -8,6 +8,16 @@ const getIntentByContext = async (context = '', ai = '') => {
     return response.data.conversation[0].message.utterance
 }
 
+const getResultByInput = async (context = '', ai = '' , history) => {
+    const response = await aiApi.req({
+        input_message: context,
+        gen_ai_name: ai,
+        history
+      })
+    return response.data
+}
+
 module.exports = {
-    getIntentByContext
+    getIntentByContext,
+    getResultByInput
 }
