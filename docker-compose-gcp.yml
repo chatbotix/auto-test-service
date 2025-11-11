@@ -1,0 +1,23 @@
+version: '3'
+services:
+    tv-direct-api:
+        container_name: tv-direct-api
+        environment:
+            - 'NODE_ENV=${NODE_ENV}'
+            - 'TZ=Asia/Bangkok'
+        image: asia.gcr.io/kpat-in-the-box/tv-direct-api:${TAG}
+        ports:
+            - '3000:3000'
+        volumes:
+            - '/opt/app/'
+        restart: always
+        networks:
+            - kpat_network
+        logging:
+            driver: 'gcplogs'
+            options:
+                labels: tv-direct-api
+networks:
+    kpat_network:
+        external:
+            name: kpat_network
