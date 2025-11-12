@@ -1,4 +1,5 @@
 const axios = require("axios");
+const path = require("path");
 require('dotenv').config({path: path.join(__dirname, '../.env')})
 const { BACKEND_BASE_URL = '', BACKEND_AUTH = 'api',} = process.env
 
