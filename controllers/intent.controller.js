@@ -8,6 +8,7 @@ class intentController {
   async testCreate(req, res) {
     const { sheetID, total } = req.body
     try {
+      if (!total) {return res.status(400).json({ message: 'Bad Request: total is required' }) }
       const sessionId = uuidv4()
       intentService.testCreate(sheetID ,sessionId, total)
       testSession.setSession(sessionId, {sessionId, type: 'intent', sheetID: sheetID, total, status: 'created', stopped: false, createdAt: new Date().toISOString()})

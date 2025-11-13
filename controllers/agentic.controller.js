@@ -6,10 +6,15 @@ const { v4: uuidv4 } = require('uuid')
 
 class agenticController {
   async testCreate(req, res) {
-    const { sheetID, sheet, testName } = req.body
+    const { sheetID, sheet, testName, total } = req.body
+    if (!total && (sheet.toLowerCase() == 'script')) {return res.status(400).json({ message: 'Bad Request: total is required' }) }
     const sessionId = uuidv4()
     try {
-      agenticService.testCreate(sheetID , sessionId, sheet , testName )
+      if (sheet.toLowerCase() == 'script') {
+        agenticService.testScript(sheetID , sessionId, total, sheet , testName)
+      } else {
+        agenticService.testCreate(sheetID , sessionId, sheet , testName )
+      }
       testSession.setSession(sessionId, {sessionId, sheetID: sheetID, type: 'agentic', status: 'created', stopped: false, createdAt: new Date().toISOString()})
         res.json({
           message: 'Success',
@@ -64,7 +69,6 @@ class agenticController {
       res.status(500).json({ massage: ' Internal Server Error' })
     }
   }
-
 }
 
 module.exports = agenticController

@@ -7,7 +7,7 @@ const testSession = require('../../session/session')
 class intentService {
    async testCreate(sheetID = '', sessionId, totalSheet = 0) {
         try {
-            const limit = 25
+            const limit = 50
             const headerRows = 1
             const footerRows = 1
             const total = (totalSheet - headerRows - footerRows)
@@ -28,7 +28,7 @@ class intentService {
                     }
                     const intents = []
                     log.info({message:`🔄 Processing batch ${i + 1} of ${batch}`, sessionId})
-                    testSession.updateSession(sessionId, {aiName, batch: `${i}/${batch}`, status: 'load_context' })
+                    testSession.updateSession(sessionId, {aiName, batch: `${i + 1}/${batch}`, status: 'load_context' })
                     const start = headerRows + 1 + i * limit
                     const end = Math.min(start + limit - 1, total + headerRows)
                     const range = `${sheetName}!A${start}:A${end}`
@@ -66,7 +66,7 @@ class intentService {
             log.info({message:`🚀 Successfully created test intents for sheetID: ${sheetID}`, sessionId})
         } catch (error) {
             testSession.updateSession(sessionId, {status: 'fail' })
-            throw new Error(`intentService: Failed to create test intent: ${error.message}`)
+            log.error(`intentService: Failed to create test intent: ${error.message}`)
         }
     }
 }
