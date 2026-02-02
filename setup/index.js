@@ -86,4 +86,10 @@ module.exports = (app) => {
   app.use(express.urlencoded({ extended: true, limit: '1mb' }))
   app.use('/api/', intentRoutes)
   app.use('/api/', agenticRoutes)
+  app.use('/delay/:seconds', (req, res) => {
+    const seconds = parseInt(req.params.seconds, 10) || 0
+    setTimeout(() => {
+      res.send({ message: `delayed for ${seconds} seconds` })
+    }, seconds * 1000)
+  })
 }
