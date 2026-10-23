@@ -77,7 +77,6 @@ const listQcSessions = async ({ start, end, page = 1, limit = 20, status } = {})
                             duration: '$session.duration',
                             status: 1,
                             model: 1,
-                            error: 1,
                             qc_result: 1,
                             conversations: { $ifNull: ['$session.conversations', []] },
                             job_run_at: 1,

@@ -42,7 +42,7 @@ class qcController {
   async result(req, res) {
     const { bot_session_id: botSessionId } = req.params
     try {
-      const result = await QcSession.findOne({ bot_session_id: botSessionId }).lean()
+      const result = await QcSession.findOne({ bot_session_id: botSessionId }).select('-error').lean()
       if (!result) return res.status(404).json({ message: 'Data Not Found' })
       res.json({ message: 'Success', data: result })
     } catch (e) {
