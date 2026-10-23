@@ -18,6 +18,7 @@ process.on('SIGTERM', shutdown)
 ;(async () => {
     try {
         await mongo.connect()
+        await require('./models/qc_session_model').init()
     } catch (err) {
         log.error(err, 'Failed to connect MongoDB')
         process.exit(1)

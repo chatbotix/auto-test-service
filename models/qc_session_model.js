@@ -17,4 +17,7 @@ const qcSessionSchema = new mongoose.Schema(
     { collection: 'qc_session', timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } },
 )
 
+// DB เปิด notablescan ไว้ ทุก query ต้องมี index รองรับ
+qcSessionSchema.index({ call_created_at: -1, status: 1 })
+
 module.exports = mongoose.model('QcSession', qcSessionSchema)
