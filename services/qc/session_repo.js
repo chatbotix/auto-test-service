@@ -1,10 +1,12 @@
 const mongoose = require('mongoose')
-const { QC_LOOKBACK_HOURS = '1', QC_SAMPLE_PERCENT = '10' } = process.env
+const { QC_LOOKBACK_HOURS = '1', QC_SAMPLE_PERCENT = '10', QC_MIN_DURATION_SECONDS = '0' } = process.env
 
-// สุ่ม session ที่จบแล้วย้อนหลัง N ชั่วโมง ตาม % ที่กำหนด (count 1 ครั้ง + $sample ใน aggregate)
+// สุ่ม session ที่จบแล้วย้อนหลัง N ชั่วโมง และยาวอย่างน้อย minDurationSeconds ตาม % ที่กำหนด
+// (count 1 ครั้ง + $sample ใน aggregate)
 const sampleEndedSessions = async ({
     lookbackHours = Number(QC_LOOKBACK_HOURS),
     samplePercent = Number(QC_SAMPLE_PERCENT),
+    minDurationSeconds = Number(QC_MIN_DURATION_SECONDS),
     now = new Date(),
 } = {}) => {
     const sessions = mongoose.connection.db.collection('sessions')
@@ -13,6 +15,7 @@ const sampleEndedSessions = async ({
         is_end_session: true,
         call_recording_url: { $nin: [null, ''] },
     }
+    if (minDurationSeconds > 0) match.duration = { $gte: minDurationSeconds }
 
     const total = await sessions.countDocuments(match)
     const size = Math.ceil((total * samplePercent) / 100)

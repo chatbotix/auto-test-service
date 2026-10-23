@@ -12,12 +12,17 @@ const listSchema = Joi.object({
   status: Joi.string().valid('DONE', 'FAILED'),
 })
 
+// ไม่ส่งค่าไหนมา ใช้ค่าจาก env ของ job
+const runSchema = Joi.object({
+  lookbackHours: Joi.number().positive(),
+  samplePercent: Joi.number().greater(0).max(100),
+  minDurationSeconds: Joi.number().min(0),
+})
+
 class qcController {
   async run(req, res) {
-    const { lookbackHours, samplePercent } = req.body || {}
-    const options = {}
-    if (lookbackHours) options.lookbackHours = Number(lookbackHours)
-    if (samplePercent) options.samplePercent = Number(samplePercent)
+    const { error, value: options } = runSchema.validate(req.body || {})
+    if (error) return res.status(400).json({ message: error.details[0].message })
     try {
       const summary = await qcJob.runQcJob(options)
       res.json({ message: 'Success', data: summary })
