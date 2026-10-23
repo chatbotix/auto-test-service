@@ -1,0 +1,15 @@
+# secrets: ใส่ตอน deploy (mount / Secret Manager) ห้าม bake ลง image
+key/
+.env
+.env.*
+env
+!env.example
+
+node_modules
+npm-debug.log*
+.git
+.gitignore
+.claude
+.DS_Store
+**/.DS_Store
+test
