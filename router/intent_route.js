@@ -1,6 +1,6 @@
 const express = require('express')
 const router = express.Router()
-const IntentController  = require('../controllers/intent.controller')
+const IntentController  = require('../controllers/intent_controller')
 const intentController = new IntentController()
 
 router.post('/intent/test/create', intentController.testCreate)

@@ -1,4 +1,4 @@
-const aiApi = require('../../api/gen_ai.api') 
+const aiApi = require('../../api/gen_ai_api') 
 
 const getIntentByContext = async (context = '', ai = '') => {
     const response = await aiApi.req({

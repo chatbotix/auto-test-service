@@ -1,8 +1,9 @@
 const path = require('path')
 require('dotenv').config({path: path.join(__dirname, '../.env')})
 const express = require('express')
-const intentRoutes = require('../router/intent.route')
-const agenticRoutes = require('../router/agentic.route')
+const intentRoutes = require('../router/intent_route')
+const agenticRoutes = require('../router/agentic_route')
+const qcRoutes = require('../router/qc_route')
 const pjson = require('../package.json')
 const helmet = require('helmet')
 const auth = require('../middlewares/auth')
@@ -86,6 +87,7 @@ module.exports = (app) => {
   app.use(express.urlencoded({ extended: true, limit: '1mb' }))
   app.use('/api/', intentRoutes)
   app.use('/api/', agenticRoutes)
+  app.use('/api/', qcRoutes)
   app.use('/delay/:seconds', (req, res) => {
     const seconds = parseInt(req.params.seconds, 10) || 0
     setTimeout(() => {

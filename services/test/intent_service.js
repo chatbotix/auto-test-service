@@ -1,7 +1,7 @@
 const log = require("../../utils/log")
-const GoogleSheetService = require("../sheet/google_sheet.service")
+const GoogleSheetService = require("../sheet/google_sheet_service")
 const googleSheetService = new GoogleSheetService()
-const ai = require("../../services/gen_ai/gen_ai.service")
+const ai = require("../../services/gen_ai/gen_ai_service")
 const testSession = require('../../session/session')
 
 class intentService {

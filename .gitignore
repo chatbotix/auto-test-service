@@ -136,3 +136,6 @@ dist
 .pnp.*
 
 key/
+
+.claude/
+env

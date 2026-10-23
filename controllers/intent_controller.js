@@ -1,4 +1,4 @@
-const IntentService = require('../services/test/intent.service')
+const IntentService = require('../services/test/intent_service')
 const testSession = require('../session/session')
 const intentService = new IntentService()
 const log = require('../utils/log')

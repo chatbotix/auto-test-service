@@ -1,6 +1,6 @@
 const express = require('express')
 const router = express.Router()
-const AgenticController  = require('../controllers/agentic.controller')
+const AgenticController  = require('../controllers/agentic_controller')
 const agenticController = new AgenticController()
 
 router.post('/agentic/test/create', agenticController.testCreate)

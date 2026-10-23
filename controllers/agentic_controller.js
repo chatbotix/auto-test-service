@@ -1,4 +1,4 @@
-const AgenticService = require('../services/test/agentic.service')
+const AgenticService = require('../services/test/agentic_service')
 const testSession = require('../session/session')
 const agenticService = new AgenticService()
 const log = require('../utils/log')

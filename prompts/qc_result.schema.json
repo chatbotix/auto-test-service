@@ -1,0 +1,100 @@
+{
+    "type": "object",
+    "properties": {
+        "call_metadata": {
+            "type": "object",
+            "properties": {
+                "evaluation_datetime": { "type": "string" },
+                "primary_root_cause": { "type": "string" }
+            },
+            "required": ["evaluation_datetime", "primary_root_cause"]
+        },
+        "thought_process": { "type": "string" },
+        "stt_accuracy_metrics": {
+            "type": "object",
+            "properties": {
+                "total_turns": { "type": "integer" },
+                "discrepancy_count": { "type": "integer" },
+                "stt_error_rate_pct": { "type": "number" }
+            },
+            "required": ["total_turns", "discrepancy_count", "stt_error_rate_pct"]
+        },
+        "stt_discrepancy_report": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "turn_id": { "type": "integer" },
+                    "error_category": {
+                        "type": "string",
+                        "enum": ["PERFECT_MATCH", "CRITICAL_MISHEARING", "MISSING_CAPTURE", "TRUE_NO_INPUT", "SAME_MEANING"]
+                    },
+                    "actual_audio_spoken": {
+                        "type": "string",
+                        "description": "ข้อความจริงที่ลูกค้าพูดในสาย (หรือระบุว่า '[ผู้ใช้เงียบ/ไม่มีเสียงพูด]' หากไม่มีเสียงจริง)"
+                    },
+                    "system_transcript": {
+                        "type": "string",
+                        "description": "ข้อความที่ระบบตรวจจับได้ในทรานสคริปต์ (เช่น ข้อความจริง หรือ ==== NO-INPUT ====)"
+                    },
+                    "impact_description": {
+                        "type": "string",
+                        "description": "อธิบายสั้นๆ เป็นภาษาไทยว่าส่งผลกระทบอย่างไร"
+                    }
+                },
+                "required": ["turn_id", "error_category", "actual_audio_spoken", "system_transcript", "impact_description"]
+            }
+        },
+        "nlu_and_flow_triangulation": {
+            "type": "object",
+            "properties": {
+                "stt_output_text": { "type": "string" },
+                "intended_user_intent": { "type": "string" },
+                "actual_system_behavior": { "type": "string" },
+                "mismatch_type": { "type": "string" }
+            },
+            "required": ["stt_output_text", "intended_user_intent", "actual_system_behavior", "mismatch_type"]
+        },
+        "sentiment_analytics": {
+            "type": "object",
+            "properties": {
+                "initial_sentiment": { "type": "string" },
+                "final_sentiment": { "type": "string" },
+                "sentiment_progression": { "type": "string" },
+                "sentiment_analysis_details": { "type": "string" }
+            },
+            "required": ["initial_sentiment", "final_sentiment", "sentiment_progression", "sentiment_analysis_details"]
+        },
+        "friction_analytics": {
+            "type": "object",
+            "properties": {
+                "has_bot_loop": { "type": "boolean" },
+                "has_barge_in_interruption": { "type": "boolean" },
+                "is_bot_audio_unhearable": { "type": "boolean" },
+                "detected_friction_flags": { "type": "array", "items": { "type": "string" } },
+                "issues_list": { "type": "array", "items": { "type": "string" } }
+            },
+            "required": ["has_bot_loop", "has_barge_in_interruption", "is_bot_audio_unhearable", "detected_friction_flags", "issues_list"]
+        },
+        "ux_score": { "type": "integer" },
+        "developer_actionable_insight": {
+            "type": "object",
+            "properties": {
+                "component_to_fix": { "type": "string" },
+                "suggested_fix": { "type": "string" }
+            },
+            "required": ["component_to_fix", "suggested_fix"]
+        }
+    },
+    "required": [
+        "call_metadata",
+        "thought_process",
+        "stt_accuracy_metrics",
+        "stt_discrepancy_report",
+        "nlu_and_flow_triangulation",
+        "sentiment_analytics",
+        "friction_analytics",
+        "ux_score",
+        "developer_actionable_insight"
+    ]
+}
