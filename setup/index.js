@@ -13,6 +13,21 @@ const { v4: uuidv4 } = require('uuid')
 const { NODE_ENV = 'local' } = process.env
 const isProduction = NODE_ENV === 'prod'
 
+// /api/qc/* ห้าม log body เต็มทุก environment: มี signed URL (ใช้ดาวน์โหลดเสียงได้), บทสนทนาลูกค้า และขนาดใหญ่
+// log แค่สรุปแทน
+const SUMMARIZED_PATH = /^\/api\/qc\//
+const summarizeBody = (body) => {
+  if (!body || typeof body !== 'object') return undefined
+  const { message, data } = body
+  if (!data || typeof data !== 'object') return { message }
+  if (Array.isArray(data.docs)) {
+    return { message, total: data.total, page: data.page, limit: data.limit, count: data.docs.length }
+  }
+  if (data.bot_session_id) return { message, bot_session_id: data.bot_session_id, status: data.status }
+  // ผลสรุปของ /qc/run เป็นตัวเลขล้วน log ได้
+  return { message, data }
+}
+
 module.exports = (app) => {
   app.use((req, res, next) => {
     const uuid = uuidv4()
@@ -42,6 +57,7 @@ module.exports = (app) => {
           parsedBody = JSON.parse(body)
         }
       } catch (e) {}
+      const summarized = SUMMARIZED_PATH.test(req.originalUrl)
       log.info(
         {
           callerId: req.headers.sipheadercallerid || uuid,
@@ -49,7 +65,9 @@ module.exports = (app) => {
           url: req.originalUrl,
           statusCode: res.statusCode,
           responseTime: `${responseTime}ms`,
-          responseBody: isProduction ? 'Hidden in production' : parsedBody,
+          ...(summarized
+            ? { responseSummary: summarizeBody(parsedBody) }
+            : { responseBody: isProduction ? 'Hidden in production' : parsedBody }),
         },
         'Response',
       )
