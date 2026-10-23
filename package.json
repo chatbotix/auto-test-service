@@ -12,6 +12,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@google-cloud/storage": "^8.4.0",
     "@google/genai": "^2.31.0",
     "axios": "^1.13.0",
     "bunyan": "^1.8.15",
