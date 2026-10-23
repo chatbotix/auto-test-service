@@ -64,7 +64,22 @@ const evaluate = async ({ transcript, audioUri, mimeType = 'audio/wav' }) => {
     if (!response.text) {
         throw new Error(`gemini_api: empty response (finishReason=${response.candidates?.[0]?.finishReason})`)
     }
-    return JSON.parse(response.text)
+    return { result: JSON.parse(response.text), usage: toUsage(response.usageMetadata) }
+}
+
+// จำนวน token จาก Gemini แยกตามชนิด input (AUDIO ใช้ยืนยันว่าโมเดลได้รับไฟล์เสียงจริง)
+const toUsage = (meta = {}) => {
+    const byModality = (details = []) =>
+        Object.fromEntries(details.map((d) => [String(d.modality).toLowerCase(), d.tokenCount || 0]))
+    const prompt = byModality(meta.promptTokensDetails)
+    return {
+        prompt_tokens: meta.promptTokenCount || 0,
+        audio_tokens: prompt.audio || 0,
+        text_tokens: prompt.text || 0,
+        output_tokens: meta.candidatesTokenCount || 0,
+        thoughts_tokens: meta.thoughtsTokenCount || 0,
+        total_tokens: meta.totalTokenCount || 0,
+    }
 }
 
 module.exports = { evaluate, model: GEMINI_MODEL }

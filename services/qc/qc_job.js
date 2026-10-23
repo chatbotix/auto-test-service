@@ -4,6 +4,7 @@ const gemini = require('../../api/gemini_api')
 const QcSession = require('../../models/qc_session_model')
 const { sampleEndedSessions } = require('./session_repo')
 const { buildTranscript, toGsUri } = require('./transcript')
+const { checkAudio } = require('./audio_check')
 const {
     QC_JOB_ENABLED = 'false',
     QC_JOB_CRON = '0 * * * *',
@@ -18,7 +19,7 @@ const evaluateWithRetry = async (input) => {
     let lastError
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
         try {
-            return { result: await gemini.evaluate(input), attempts: attempt }
+            return { ...(await gemini.evaluate(input)), attempts: attempt }
         } catch (e) {
             lastError = e
             log.warn({ attempt, error: e.message }, 'QC: gemini evaluate failed')
@@ -41,14 +42,20 @@ const evaluateSession = async (session, jobRunAt) => {
     try {
         const transcript = buildTranscript(session)
         base.transcript = transcript
-        const { result, attempts } = await evaluateWithRetry({
+        const { result, usage, attempts } = await evaluateWithRetry({
             transcript,
             audioUri: toGsUri(session.call_recording_url),
         })
+        const audioCheck = checkAudio({ audioTokens: usage.audio_tokens, callDurationSeconds: session.duration })
+        if (audioCheck.status !== 'OK') {
+            log.warn({ bot_session_id: session.bot_session_id, audio_check: audioCheck }, 'QC: audio check flagged')
+        }
         update = {
             ...base,
             status: 'DONE',
             qc_result: result,
+            usage,
+            audio_check: audioCheck,
             error: null,
             attempts,
         }
@@ -115,4 +122,4 @@ const start = () => {
     log.info(`QC: job scheduled "${QC_JOB_CRON}"`)
 }
 
-module.exports = { start, runQcJob }
+module.exports = { start, runQcJob, evaluateSession }

@@ -8,6 +8,24 @@ const qcSessionSchema = new mongoose.Schema(
         transcript: String,
         status: { type: String, enum: ['DONE', 'FAILED'], index: true },
         qc_result: mongoose.Schema.Types.Mixed,
+        // token จาก Gemini usageMetadata (audio_tokens > 0 = โมเดลได้รับเสียงจริง)
+        usage: {
+            prompt_tokens: Number,
+            audio_tokens: Number,
+            text_tokens: Number,
+            output_tokens: Number,
+            thoughts_tokens: Number,
+            total_tokens: Number,
+        },
+        // เทียบความยาวเสียงที่โมเดลได้รับกับความยาวสาย
+        audio_check: {
+            status: { type: String, enum: ['OK', 'NO_AUDIO', 'DURATION_MISMATCH', 'NO_DURATION'] },
+            audio_tokens: Number,
+            estimated_audio_seconds: Number,
+            call_duration_seconds: Number,
+            diff_seconds: Number,
+            diff_pct: Number,
+        },
         model: String,
         error: String,
         attempts: Number,
