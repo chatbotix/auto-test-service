@@ -1,7 +1,7 @@
 const cron = require('node-cron')
 const log = require('../../utils/log')
 const gemini = require('../../api/gemini_api')
-const QcResult = require('../../models/qc_result_model')
+const QcSession = require('../../models/qc_session_model')
 const { sampleEndedSessions } = require('./session_repo')
 const { buildTranscript, toGsUri } = require('./transcript')
 const {
@@ -48,16 +48,14 @@ const evaluateSession = async (session, jobRunAt) => {
         update = {
             ...base,
             status: 'DONE',
-            ux_score: result.ux_score,
-            primary_root_cause: result.call_metadata?.primary_root_cause,
-            result,
+            qc_result: result,
             error: null,
             attempts,
         }
     } catch (e) {
         update = { ...base, status: 'FAILED', error: e.message, attempts: e.attempts || 1 }
     }
-    await QcResult.findOneAndUpdate({ bot_session_id: session.bot_session_id }, update, { upsert: true })
+    await QcSession.findOneAndUpdate({ bot_session_id: session.bot_session_id }, update, { upsert: true })
     return update.status
 }
 
@@ -85,7 +83,7 @@ const runQcJob = async (options = {}) => {
     try {
         const { total, docs } = await sampleEndedSessions({ ...options, now: jobRunAt })
         const ids = docs.map((doc) => doc.bot_session_id)
-        const done = await QcResult.find({ bot_session_id: { $in: ids }, status: 'DONE' }).distinct('bot_session_id')
+        const done = await QcSession.find({ bot_session_id: { $in: ids }, status: 'DONE' }).distinct('bot_session_id')
         const doneSet = new Set(done)
         const todo = docs.filter((doc) => doc.bot_session_id && !doneSet.has(doc.bot_session_id))
 
