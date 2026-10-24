@@ -88,6 +88,83 @@ const toSummary = ({ overview, byProblem }) => {
     }
 }
 
+// join ข้อมูลสายจาก sessions และเลือกฟิลด์ที่หน้า UI ใช้ (ใช้ทั้ง list และเปิดสายเดียว)
+const uiDocStages = [
+    {
+        $lookup: {
+            from: 'sessions',
+            localField: 'session_id',
+            foreignField: '_id',
+            pipeline: [
+                {
+                    $project: {
+                        _id: 0,
+                        direction: 1,
+                        duration: 1,
+                        conversations: {
+                            $map: {
+                                input: { $ifNull: ['$conversations', []] },
+                                as: 'c',
+                                in: {
+                                    conversation_id: '$$c.conversation_id',
+                                    sender: '$$c.sender',
+                                    utterance: '$$c.message.utterance',
+                                    audios: '$$c.message.audios',
+                                    created_at: '$$c.created_at',
+                                    listened_at: '$$c.listened_at',
+                                },
+                            },
+                        },
+                        // ลำดับ turn แบบเดียวกับ transcript (มี turn NO-INPUT) ดึงเฉพาะฟิลด์ที่ใช้
+                        bot_conversations: {
+                            $map: {
+                                input: { $ifNull: ['$bot_session.conversations', []] },
+                                as: 'c',
+                                in: {
+                                    conversation_id: '$$c.conversation_id',
+                                    sender: '$$c.sender',
+                                    payload: {
+                                        utterance: '$$c.payload.utterance',
+                                        action: '$$c.payload.action',
+                                        flowDecisionAt: '$$c.payload.flowDecisionAt',
+                                        audios: {
+                                            $map: {
+                                                input: { $ifNull: ['$$c.payload.audios', []] },
+                                                as: 'a',
+                                                in: { type: '$$a.type', text: '$$a.text' },
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+            ],
+            as: 'session',
+        },
+    },
+    { $set: { session: { $first: '$session' } } },
+    {
+        $project: {
+            _id: 0,
+            bot_session_id: 1,
+            session_id: 1,
+            call_created_at: 1,
+            call_recording_url: 1,
+            direction: '$session.direction',
+            duration: '$session.duration',
+            status: 1,
+            model: 1,
+            qc_result: 1,
+            audio_check: 1,
+            conversations: { $ifNull: ['$session.conversations', []] },
+            bot_conversations: { $ifNull: ['$session.bot_conversations', []] },
+            job_run_at: 1,
+        },
+    },
+]
+
 // ดึง qc_session ตามช่วงเวลาโทร แบบแบ่งหน้า แล้ว join conversations จาก sessions ด้วย session_id
 const listQcSessions = async ({ start, end, page = 1, limit = 20, status, problem } = {}) => {
     const match = { call_created_at: { $gte: start, $lte: end } }
@@ -105,79 +182,7 @@ const listQcSessions = async ({ start, end, page = 1, limit = 20, status, proble
                     { $sort: { call_created_at: -1, _id: -1 } },
                     { $skip: (page - 1) * limit },
                     { $limit: limit },
-                    {
-                        $lookup: {
-                            from: 'sessions',
-                            localField: 'session_id',
-                            foreignField: '_id',
-                            pipeline: [
-                                {
-                                    $project: {
-                                        _id: 0,
-                                        direction: 1,
-                                        duration: 1,
-                                        conversations: {
-                                            $map: {
-                                                input: { $ifNull: ['$conversations', []] },
-                                                as: 'c',
-                                                in: {
-                                                    conversation_id: '$$c.conversation_id',
-                                                    sender: '$$c.sender',
-                                                    utterance: '$$c.message.utterance',
-                                                    audios: '$$c.message.audios',
-                                                    created_at: '$$c.created_at',
-                                                    listened_at: '$$c.listened_at',
-                                                },
-                                            },
-                                        },
-                                        // ลำดับ turn แบบเดียวกับ transcript (มี turn NO-INPUT) ดึงเฉพาะฟิลด์ที่ใช้
-                                        bot_conversations: {
-                                            $map: {
-                                                input: { $ifNull: ['$bot_session.conversations', []] },
-                                                as: 'c',
-                                                in: {
-                                                    conversation_id: '$$c.conversation_id',
-                                                    sender: '$$c.sender',
-                                                    payload: {
-                                                        utterance: '$$c.payload.utterance',
-                                                        action: '$$c.payload.action',
-                                                        flowDecisionAt: '$$c.payload.flowDecisionAt',
-                                                        audios: {
-                                                            $map: {
-                                                                input: { $ifNull: ['$$c.payload.audios', []] },
-                                                                as: 'a',
-                                                                in: { type: '$$a.type', text: '$$a.text' },
-                                                            },
-                                                        },
-                                                    },
-                                                },
-                                            },
-                                        },
-                                    },
-                                },
-                            ],
-                            as: 'session',
-                        },
-                    },
-                    { $set: { session: { $first: '$session' } } },
-                    {
-                        $project: {
-                            _id: 0,
-                            bot_session_id: 1,
-                            session_id: 1,
-                            call_created_at: 1,
-                            call_recording_url: 1,
-                            direction: '$session.direction',
-                            duration: '$session.duration',
-                            status: 1,
-                            model: 1,
-                            qc_result: 1,
-                            audio_check: 1,
-                            conversations: { $ifNull: ['$session.conversations', []] },
-                            bot_conversations: { $ifNull: ['$session.bot_conversations', []] },
-                            job_run_at: 1,
-                        },
-                    },
+                    ...uiDocStages,
                 ],
             },
         },
@@ -195,4 +200,10 @@ const listQcSessions = async ({ start, end, page = 1, limit = 20, status, proble
     }
 }
 
-module.exports = { listQcSessions }
+// เปิดสายเดียวด้วย bot_session_id (ลิงก์ที่ทีม QC แชร์ให้ทีมพัฒนา) รูปแบบเดียวกับแถวใน list
+const getQcSessionDetail = async (botSessionId) => {
+    const [doc] = await QcSession.aggregate([{ $match: { bot_session_id: botSessionId } }, ...uiDocStages])
+    return doc ? withPlayUrls(toUiConversations(doc)) : null
+}
+
+module.exports = { listQcSessions, getQcSessionDetail }

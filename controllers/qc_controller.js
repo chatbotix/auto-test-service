@@ -1,6 +1,6 @@
 const Joi = require('joi')
 const qcJob = require('../services/qc/qc_job')
-const { listQcSessions } = require('../services/qc/qc_session_service')
+const { listQcSessions, getQcSessionDetail } = require('../services/qc/qc_session_service')
 const { getQcConfig, getQcConfigFile } = require('../services/qc/qc_config')
 const QcSession = require('../models/qc_session_model')
 const log = require('../utils/log')
@@ -42,6 +42,18 @@ class qcController {
     try {
       const data = await listQcSessions(value)
       res.json({ message: 'Success', data })
+    } catch (e) {
+      log.error({ error: 'Controller: qcController ' + e?.message })
+      res.status(500).json({ message: 'Internal Server Error' })
+    }
+  }
+
+  // สายเดียวสำหรับลิงก์แชร์ของหน้า UI
+  async detail(req, res) {
+    try {
+      const doc = await getQcSessionDetail(String(req.params.bot_session_id))
+      if (!doc) return res.status(404).json({ message: 'Data Not Found' })
+      res.json({ message: 'Success', data: doc })
     } catch (e) {
       log.error({ error: 'Controller: qcController ' + e?.message })
       res.status(500).json({ message: 'Internal Server Error' })
