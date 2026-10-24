@@ -28,6 +28,7 @@ Evaluate the interaction based strictly on the following 5-point rubric:
 * **TEXT-ONLY RULE:** You MUST extract and count turns based STRICTLY AND ONLY on the provided Text Log.
 * **IGNORE AUDIO FOR COUNTING:** DO NOT use the audio file to count turns. If the customer spoke in the audio but the ASR failed to capture it (meaning it is NOT written in the text log), DO NOT add it as a turn. Count only what is explicitly written in the text.
 * **IDENTIFYING THE CUSTOMER:** The customer's line starts with a dynamic numerical ID or phone number followed by a colon (e.g., `"0957149923:"`, `"201:"`, `"Customer:"`). ANY line starting with digits and a colon is exactly ONE Customer Turn.
+* **LINE TIMESTAMPS:** Each line may END with a timestamp from the start of the call, e.g. `201: สอบถามสัญญาณโทร  [00:19]`. `[mm:ss]` is when that utterance started. On a NO-INPUT line, `[after mm:ss]` means the system was listening for the customer after the bot line that started at that time, and captured nothing. The timestamp is NOT part of the text and NOT a speaker ID; never quote it in `{Text}` or `system_transcript`.
 * **ABSOLUTE RULE - NO DEDUPLICATION:** EVERY single Customer entry line is 1 distinct turn. If `"==== NO-INPUT ===="` or `"ใช่ ครับ"` appears 3 times in a row, they MUST be indexed as 3 separate turns (e.g., Turn 1, Turn 2, Turn 3).
 * **ANTI-HALLUCINATION RULE:** You MUST strictly extract ONLY the turns that exist in the text. DO NOT invent, guess, or add any extra turns that are not explicitly written in the log. STOP parsing exactly when the log ends.
 * **REQUIRED FORMAT:** You MUST format the very beginning of your `thought_process` EXACTLY like this template before writing your analysis:
@@ -43,11 +44,23 @@ Total Turns = {N}
 
 ### 2. Audio vs. Transcript Validation per Parsed Turn
 
+**SPEAKER IDENTIFICATION (MANDATORY):**
+
+* The audio is a single mono channel containing BOTH speakers.
+* The BOT is a synthetic female voicebot named "มะลิ". It speaks politely and ends sentences with "ค่ะ" / "คะ". Every `Bot:` line is exactly what the bot said, including its opening greeting (e.g. "สวัสดีค่ะ มะลิพร้อมดูแลคุณค่ะ").
+* The CUSTOMER is the other, human voice.
+* NEVER attribute the bot's speech, or any part of it, to the customer. Do not change the bot's words (e.g. "ค่ะ" → "ครับ") to make them sound like the customer.
+
+**ALIGNMENT:**
+
+* Use the line timestamps to find each turn's audio segment.
+* For a NO-INPUT turn, listen ONLY to the window after the preceding bot line finishes speaking and before the next bot line starts.
+
 * For Turn 1 through Turn N, match each indexed line against its exact timestamp/audio segment in the call.
 * Evaluate EVERY turn individually and include all turns in `stt_discrepancy_report` sequentially:
 * **`PERFECT_MATCH`**: Text matches audio perfectly.
-* **`MISSING_CAPTURE`**: Text is `"==== NO-INPUT ===="` (or blank), but user spoke in the audio.
-* **`TRUE_NO_INPUT`**: Text is `"==== NO-INPUT ===="`, and user was genuinely silent in the audio.
+* **`MISSING_CAPTURE`**: Text is `"==== NO-INPUT ===="` (or blank), but the CUSTOMER's human voice clearly speaks in that turn's listening window. Use it only when you can hear the customer, not the bot.
+* **`TRUE_NO_INPUT`**: Text is `"==== NO-INPUT ===="`, and the customer was silent in that window, or the only speech there is the bot. Set `actual_audio_spoken` to `"[ผู้ใช้เงียบ/ไม่มีเสียงพูด]"`. When unsure, choose `TRUE_NO_INPUT`. Never invent or guess customer words.
 * **`SAME_MEANING`**: Text differs slightly in wording but captures the exact same meaning/intent.
 * **`CRITICAL_MISHEARING`**: Text misinterprets or misidentifies spoken words.
 

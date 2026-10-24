@@ -1,6 +1,7 @@
 const QcSession = require('../../models/qc_session_model')
 const log = require('../../utils/log')
 const { toSignedUrl } = require('../gcs/gcs_signed_url')
+const { buildConversationTurns } = require('./conversation_turns')
 
 // เซ็นลิงก์เสียงทั้งสายและเสียงลูกค้าแต่ละประโยค ถ้าเซ็นไม่ได้ให้หน้า list ยังใช้ได้
 const withPlayUrls = async (doc) => {
@@ -20,6 +21,12 @@ const withPlayUrls = async (doc) => {
         return { ...doc, call_recording_play_url: null }
     }
 }
+
+// เรียงบทสนทนาตาม turn เดียวกับแท็บ STT; ข้อมูลเก่าที่ไม่มี bot_session ใช้ conversations ชั้นนอกตามเดิม
+const toUiConversations = ({ bot_conversations: botConversations, ...doc }) =>
+    botConversations.length
+        ? { ...doc, conversations: buildConversationTurns(botConversations, doc.conversations) }
+        : doc
 
 // ดึง qc_session ตามช่วงเวลาโทร แบบแบ่งหน้า แล้ว join conversations จาก sessions ด้วย session_id
 const listQcSessions = async ({ start, end, page = 1, limit = 20, status } = {}) => {
@@ -56,6 +63,30 @@ const listQcSessions = async ({ start, end, page = 1, limit = 20, status } = {})
                                                     utterance: '$$c.message.utterance',
                                                     audios: '$$c.message.audios',
                                                     created_at: '$$c.created_at',
+                                                    listened_at: '$$c.listened_at',
+                                                },
+                                            },
+                                        },
+                                        // ลำดับ turn แบบเดียวกับ transcript (มี turn NO-INPUT) ดึงเฉพาะฟิลด์ที่ใช้
+                                        bot_conversations: {
+                                            $map: {
+                                                input: { $ifNull: ['$bot_session.conversations', []] },
+                                                as: 'c',
+                                                in: {
+                                                    conversation_id: '$$c.conversation_id',
+                                                    sender: '$$c.sender',
+                                                    payload: {
+                                                        utterance: '$$c.payload.utterance',
+                                                        action: '$$c.payload.action',
+                                                        flowDecisionAt: '$$c.payload.flowDecisionAt',
+                                                        audios: {
+                                                            $map: {
+                                                                input: { $ifNull: ['$$c.payload.audios', []] },
+                                                                as: 'a',
+                                                                in: { type: '$$a.type', text: '$$a.text' },
+                                                            },
+                                                        },
+                                                    },
                                                 },
                                             },
                                         },
@@ -80,6 +111,7 @@ const listQcSessions = async ({ start, end, page = 1, limit = 20, status } = {})
                             qc_result: 1,
                             audio_check: 1,
                             conversations: { $ifNull: ['$session.conversations', []] },
+                            bot_conversations: { $ifNull: ['$session.bot_conversations', []] },
                             job_run_at: 1,
                         },
                     },
@@ -90,7 +122,7 @@ const listQcSessions = async ({ start, end, page = 1, limit = 20, status } = {})
     ])
 
     return {
-        docs: await Promise.all(docs.map(withPlayUrls)),
+        docs: await Promise.all(docs.map(toUiConversations).map(withPlayUrls)),
         total,
         page,
         limit,

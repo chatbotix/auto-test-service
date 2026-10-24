@@ -31,6 +31,12 @@ const sampleEndedSessions = async ({
                         bot_session_id: 1,
                         call_recording_url: 1,
                         'bot_session.conversations': 1,
+                        // เวลาและข้อความต่อประโยค ใช้ใส่ [mm:ss] ใน transcript
+                        'conversations.conversation_id': 1,
+                        'conversations.sender': 1,
+                        'conversations.message.utterance': 1,
+                        'conversations.created_at': 1,
+                        'conversations.listened_at': 1,
                         'payload.ani': 1,
                         created_at: 1,
                         duration: 1,
