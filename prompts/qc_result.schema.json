@@ -39,7 +39,7 @@
                     },
                     "impact_description": {
                         "type": "string",
-                        "description": "อธิบายสั้นๆ เป็นภาษาไทยว่าส่งผลกระทบอย่างไร"
+                        "description": "สำหรับทีม QC: ภาษาไทยธรรมดา ไม่มีศัพท์เทคนิค (ห้าม STT/ASR/NLU/turn/intent) เล่าว่าส่งผลกับลูกค้าอย่างไร"
                     }
                 },
                 "required": ["turn_id", "error_category", "actual_audio_spoken", "system_transcript", "impact_description"]
@@ -61,7 +61,10 @@
                 "initial_sentiment": { "type": "string" },
                 "final_sentiment": { "type": "string" },
                 "sentiment_progression": { "type": "string" },
-                "sentiment_analysis_details": { "type": "string" }
+                "sentiment_analysis_details": {
+                    "type": "string",
+                    "description": "สำหรับทีม QC: ภาษาไทยธรรมดา ไม่มีศัพท์เทคนิค"
+                }
             },
             "required": ["initial_sentiment", "final_sentiment", "sentiment_progression", "sentiment_analysis_details"]
         },
@@ -72,7 +75,11 @@
                 "has_barge_in_interruption": { "type": "boolean" },
                 "is_bot_audio_unhearable": { "type": "boolean" },
                 "detected_friction_flags": { "type": "array", "items": { "type": "string" } },
-                "issues_list": { "type": "array", "items": { "type": "string" } }
+                "issues_list": {
+                    "type": "array",
+                    "description": "สำหรับทีม QC: ปัญหาที่ลูกค้าเจอ ภาษาไทยธรรมดา ไม่มีศัพท์เทคนิค",
+                    "items": { "type": "string" }
+                }
             },
             "required": ["has_bot_loop", "has_barge_in_interruption", "is_bot_audio_unhearable", "detected_friction_flags", "issues_list"]
         },
@@ -81,7 +88,10 @@
             "type": "object",
             "properties": {
                 "component_to_fix": { "type": "string" },
-                "suggested_fix": { "type": "string" }
+                "suggested_fix": {
+                    "type": "string",
+                    "description": "สำหรับทีมพัฒนา: คำแนะนำเชิงเทคนิค ใช้ศัพท์เทคนิคได้"
+                }
             },
             "required": ["component_to_fix", "suggested_fix"]
         }

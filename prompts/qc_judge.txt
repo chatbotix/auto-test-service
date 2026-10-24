@@ -98,6 +98,24 @@ Note any user interruptions, repeated information requests, or long silences.
 
 Draft a concise structural justification and assign the final score (0 to 5).
 
+### 6. Write for Two Audiences (MANDATORY)
+
+Some fields are read by the **QC team**. They are non-technical quality reviewers who judge how the customer was served. Other fields are read by the **development team**. Write each field for its reader:
+
+* **QC team: plain, everyday Thai.** These fields must be written as what happened to the customer and the conversation, in words anyone in a call center understands:
+  * `stt_discrepancy_report[].impact_description`
+  * `sentiment_analytics.sentiment_analysis_details`
+  * every item in `friction_analytics.issues_list`
+  * NEVER use technical terms in these fields, in Thai or English. Banned terms include STT, ASR, NLU, TTS, intent, turn, transcript, token, flow, model, latency, NO-INPUT, confidence, entity, and the speech-recognition system ("ระบบถอดเสียง"/"ระบบรู้จำเสียง").
+  * Say "บอท" for the voicebot and "ลูกค้า" for the caller. Describe what the bot heard, misheard, missed, said or did, and how it affected the customer.
+  * Good: "บอทได้ยินเบอร์โทรที่ลูกค้าบอกผิด เลยถามซ้ำสองรอบแล้ววางสาย ลูกค้าทำรายการไม่สำเร็จ"
+  * Bad: "ระบบ STT ถอดเสียงตัวเลขผิดพลาด ทำให้ NLU จับ intent ไม่ได้"
+  * Keep each item to one or two short sentences.
+* **Development team: technical Thai is fine.** These fields may and should be precise and technical, naming components such as STT, NLU and dialog flow:
+  * `developer_actionable_insight.suggested_fix`
+  * `nlu_and_flow_triangulation.*`
+  * `thought_process`
+
 ---
 
 ## Output Format
@@ -121,7 +139,7 @@ You must return your evaluation strictly as a valid JSON object. Do not include 
       "error_category": "PERFECT_MATCH | CRITICAL_MISHEARING | MISSING_CAPTURE | TRUE_NO_INPUT | SAME_MEANING",
       "actual_audio_spoken": "ข้อความจริงที่ลูกค้าพูดในสาย (หรือระบุว่า '[ผู้ใช้เงียบ/ไม่มีเสียงพูด]' หากไม่มีเสียงจริง)",
       "system_transcript": "ข้อความที่ระบบตรวจจับได้ในทรานสคริปต์ (เช่น ข้อความจริง หรือ ==== NO-INPUT ====)",
-      "impact_description": "อธิบายสั้นๆ เป็นภาษาไทยว่าส่งผลกระทบอย่างไร"
+      "impact_description": "สำหรับทีม QC: ภาษาไทยธรรมดา ไม่มีศัพท์เทคนิค เล่าว่าบอทได้ยิน/ไม่ได้ยินอะไร และส่งผลกับลูกค้าอย่างไร"
     }
   ],
   "nlu_and_flow_triangulation": {
@@ -134,7 +152,7 @@ You must return your evaluation strictly as a valid JSON object. Do not include 
     "initial_sentiment": "POSITIVE | NEUTRAL | NEGATIVE",
     "final_sentiment": "POSITIVE | NEUTRAL | NEGATIVE",
     "sentiment_progression": "IMPROVED | SUSTAINED | DEGRADED",
-    "sentiment_analysis_details": "คำอธิบายเชิงลึกสั้นๆ เป็นภาษาไทย"
+    "sentiment_analysis_details": "สำหรับทีม QC: ภาษาไทยธรรมดา ไม่มีศัพท์เทคนิค เล่าว่าความรู้สึกของลูกค้าเปลี่ยนไปอย่างไรและเพราะอะไร"
   },
   "friction_analytics": {
     "has_bot_loop": false,
@@ -147,12 +165,12 @@ You must return your evaluation strictly as a valid JSON object. Do not include 
       "etc"
     ],
     "issues_list": [
-      "รายการปัญหาที่พบย่อยเป็นข้อๆ เป็นภาษาไทย"
+      "สำหรับทีม QC: ปัญหาที่ลูกค้าเจอทีละข้อ ภาษาไทยธรรมดา ไม่มีศัพท์เทคนิค"
     ]
   },
   "ux_score": 0,
   "developer_actionable_insight": {
     "component_to_fix": "STT_MODEL | DIALOG_FLOW | NLU_INTENT | TTS_MODEL | NETWORK_LATENCY | AUDIO_GATEWAY",
-    "suggested_fix": "คำแนะนำสั้นๆ สำหรับทีมพัฒนาในการแก้ไขบอทในสายนี้ (ภาษาไทย)"
+    "suggested_fix": "สำหรับทีมพัฒนา: คำแนะนำเชิงเทคนิคสั้นๆ ในการแก้บอทจากสายนี้ (ภาษาไทย ใช้ศัพท์เทคนิคได้)"
   }
 }
