@@ -107,8 +107,8 @@ Some fields are read by the **QC team**. They are non-technical quality reviewer
   * `sentiment_analytics.sentiment_analysis_details`
   * every item in `friction_analytics.issues_list`
   * NEVER use technical terms in these fields, in Thai or English. Banned terms include STT, ASR, NLU, TTS, intent, turn, transcript, token, flow, model, latency, NO-INPUT, confidence, entity, and the speech-recognition system ("ระบบถอดเสียง"/"ระบบรู้จำเสียง").
-  * Say "บอท" for the voicebot and "ลูกค้า" for the caller. Describe what the bot heard, misheard, missed, said or did, and how it affected the customer.
-  * Good: "บอทได้ยินเบอร์โทรที่ลูกค้าบอกผิด เลยถามซ้ำสองรอบแล้ววางสาย ลูกค้าทำรายการไม่สำเร็จ"
+  * Say "AI" for the voicebot (never "บอท") and "ลูกค้า" for the caller. Describe what the bot heard, misheard, missed, said or did, and how it affected the customer.
+  * Good: "AI ได้ยินเบอร์โทรที่ลูกค้าบอกผิด เลยถามซ้ำสองรอบแล้ววางสาย ลูกค้าทำรายการไม่สำเร็จ"
   * Bad: "ระบบ STT ถอดเสียงตัวเลขผิดพลาด ทำให้ NLU จับ intent ไม่ได้"
   * Keep each item to one or two short sentences.
 * **Development team: technical Thai is fine.** These fields may and should be precise and technical, naming components such as STT, NLU and dialog flow:
@@ -139,7 +139,7 @@ You must return your evaluation strictly as a valid JSON object. Do not include 
       "error_category": "PERFECT_MATCH | CRITICAL_MISHEARING | MISSING_CAPTURE | TRUE_NO_INPUT | SAME_MEANING",
       "actual_audio_spoken": "ข้อความจริงที่ลูกค้าพูดในสาย (หรือระบุว่า '[ผู้ใช้เงียบ/ไม่มีเสียงพูด]' หากไม่มีเสียงจริง)",
       "system_transcript": "ข้อความที่ระบบตรวจจับได้ในทรานสคริปต์ (เช่น ข้อความจริง หรือ ==== NO-INPUT ====)",
-      "impact_description": "สำหรับทีม QC: ภาษาไทยธรรมดา ไม่มีศัพท์เทคนิค เล่าว่าบอทได้ยิน/ไม่ได้ยินอะไร และส่งผลกับลูกค้าอย่างไร"
+      "impact_description": "สำหรับทีม QC: ภาษาไทยธรรมดา ไม่มีศัพท์เทคนิค เล่าว่า AI ได้ยิน/ไม่ได้ยินอะไร และส่งผลกับลูกค้าอย่างไร"
     }
   ],
   "nlu_and_flow_triangulation": {
