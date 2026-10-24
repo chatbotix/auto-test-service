@@ -58,4 +58,21 @@ const getQcConfig = () => ({
     })),
 })
 
-module.exports = { getQcConfig }
+// อ่านเนื้อหาไฟล์ prompt/schema เพื่อแสดงในหน้า UI (อ่านอย่างเดียว เฉพาะ 2 ไฟล์นี้)
+const FILE_ENV = { promptFile: ['QC_PROMPT_FILE', 'prompts/qc_judge.txt'], schemaFile: ['QC_SCHEMA_FILE', 'prompts/qc_result.schema.json'] }
+
+const getQcConfigFile = (id) => {
+    const entry = FILE_ENV[id]
+    if (!entry) return null
+    const relative = read(...entry)
+    const full = path.resolve(ROOT, relative)
+    // กันอ่านไฟล์นอกโปรเจค ถ้า env ชี้ออกไปข้างนอก
+    if (!full.startsWith(ROOT + path.sep)) return null
+    try {
+        return { id, path: relative, content: fs.readFileSync(full, 'utf8') }
+    } catch {
+        return null
+    }
+}
+
+module.exports = { getQcConfig, getQcConfigFile }

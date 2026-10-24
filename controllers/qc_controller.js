@@ -1,7 +1,7 @@
 const Joi = require('joi')
 const qcJob = require('../services/qc/qc_job')
 const { listQcSessions } = require('../services/qc/qc_session_service')
-const { getQcConfig } = require('../services/qc/qc_config')
+const { getQcConfig, getQcConfigFile } = require('../services/qc/qc_config')
 const QcSession = require('../models/qc_session_model')
 const log = require('../utils/log')
 
@@ -52,6 +52,18 @@ class qcController {
   async config(req, res) {
     try {
       res.json({ message: 'Success', data: getQcConfig() })
+    } catch (e) {
+      log.error({ error: 'Controller: qcController ' + e?.message })
+      res.status(500).json({ message: 'Internal Server Error' })
+    }
+  }
+
+  // เนื้อหาไฟล์ prompt หรือ schema (id: promptFile | schemaFile)
+  async configFile(req, res) {
+    try {
+      const file = getQcConfigFile(req.params.id)
+      if (!file) return res.status(404).json({ message: 'Data Not Found' })
+      res.json({ message: 'Success', data: file })
     } catch (e) {
       log.error({ error: 'Controller: qcController ' + e?.message })
       res.status(500).json({ message: 'Internal Server Error' })

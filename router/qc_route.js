@@ -7,5 +7,6 @@ router.post('/qc/run', qcController.run)
 router.post('/qc/sessions', qcController.list)
 router.get('/qc/results/:bot_session_id', qcController.result)
 router.get('/qc/config', qcController.config)
+router.get('/qc/config/files/:id', qcController.configFile)
 
 module.exports = router
