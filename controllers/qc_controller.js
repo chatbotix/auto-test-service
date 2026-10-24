@@ -1,6 +1,7 @@
 const Joi = require('joi')
 const qcJob = require('../services/qc/qc_job')
 const { listQcSessions } = require('../services/qc/qc_session_service')
+const { getQcConfig } = require('../services/qc/qc_config')
 const QcSession = require('../models/qc_session_model')
 const log = require('../utils/log')
 
@@ -41,6 +42,16 @@ class qcController {
     try {
       const data = await listQcSessions(value)
       res.json({ message: 'Success', data })
+    } catch (e) {
+      log.error({ error: 'Controller: qcController ' + e?.message })
+      res.status(500).json({ message: 'Internal Server Error' })
+    }
+  }
+
+  // ค่าตั้งของงานตรวจ (อ่านอย่างเดียว ไม่มีค่าลับ) สำหรับหน้า "ระบบ"
+  async config(req, res) {
+    try {
+      res.json({ message: 'Success', data: getQcConfig() })
     } catch (e) {
       log.error({ error: 'Controller: qcController ' + e?.message })
       res.status(500).json({ message: 'Internal Server Error' })
