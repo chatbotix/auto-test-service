@@ -19,17 +19,24 @@ const evaluateWithRetry = async (input) => {
     const maxAttempts = Number(QC_MAX_RETRY) + 1
     let lastError
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        let output
         try {
-            const output = await gemini.evaluate(input)
-            // ผลที่นับ turn ไม่ตรง (เช่นเอาบรรทัด Bot มาเป็น turn ลูกค้า) ให้ลองใหม่ ไม่บันทึกผลผิด
-            const mismatch = findTurnMismatch(output.result, input.customerTurns)
-            if (mismatch) throw new Error(`turn check failed: ${mismatch}`)
-            return { ...output, attempts: attempt }
+            output = await gemini.evaluate(input)
         } catch (e) {
+            // retry เฉพาะ error จากการเรียก Gemini (network, quota, response ว่าง)
             lastError = e
             log.warn({ attempt, error: e.message }, 'QC: gemini evaluate failed')
             if (attempt < maxAttempts) await new Promise((r) => setTimeout(r, 2000 * attempt))
+            continue
         }
+        // นับ turn ไม่ตรง (เช่นเอาบรรทัด Bot มาเป็น turn ลูกค้า): ไม่ retry เพื่อประหยัด token, บันทึกเป็น FAILED แทนผลที่ผิด
+        const mismatch = findTurnMismatch(output.result, input.customerTurns)
+        if (mismatch) {
+            const error = new Error(`turn check failed: ${mismatch}`)
+            error.attempts = attempt
+            throw error
+        }
+        return { ...output, attempts: attempt }
     }
     lastError.attempts = maxAttempts
     throw lastError
