@@ -3,39 +3,38 @@ const path = require('path')
 
 const ROOT = path.join(__dirname, '../..')
 
-// ค่าตั้งของงานตรวจอัตโนมัติที่แสดงในหน้า "ระบบ" ของ UI (อ่านอย่างเดียว)
-// default ต้องตรงกับที่โค้ดแต่ละส่วนใช้จริง; ห้ามใส่ค่าลับ (token, รหัส DB, เนื้อหา SA key)
+// ค่าตั้งของงานตรวจอัตโนมัติที่แสดงในหน้า "ตั้งค่าระบบ" ของ UI (อ่านอย่างเดียว)
+// default ต้องตรงกับที่โค้ดแต่ละส่วนใช้จริง
+// ห้ามใส่ค่าที่เกี่ยวกับสิทธิ์/บัญชี (token, รหัส DB, service account, GCP project) และไม่บอกที่มาของค่า
+// ส่งออกด้วย id กลาง ไม่ส่งชื่อตัวแปร env: [ชื่อ env, id ที่ส่งให้ UI, default]
 const GROUPS = [
     {
         id: 'job',
         items: [
-            ['QC_JOB_ENABLED', 'false'],
-            ['QC_JOB_CRON', '0 * * * *'],
-            ['QC_LOOKBACK_HOURS', '1'],
-            ['QC_SAMPLE_PERCENT', '10'],
-            ['QC_MIN_DURATION_SECONDS', '0'],
-            ['QC_CONCURRENCY', '3'],
-            ['QC_MAX_RETRY', '2'],
-            ['QC_PROMPT_FILE', 'prompts/qc_judge.txt'],
-            ['QC_SCHEMA_FILE', 'prompts/qc_result.schema.json'],
+            ['QC_JOB_ENABLED', 'jobEnabled', 'false'],
+            ['QC_JOB_CRON', 'schedule', '0 * * * *'],
+            ['QC_LOOKBACK_HOURS', 'lookbackHours', '1'],
+            ['QC_SAMPLE_PERCENT', 'samplePercent', '10'],
+            ['QC_MIN_DURATION_SECONDS', 'minDurationSeconds', '0'],
+            ['QC_CONCURRENCY', 'concurrency', '3'],
+            ['QC_MAX_RETRY', 'maxRetry', '2'],
+            ['QC_PROMPT_FILE', 'promptFile', 'prompts/qc_judge.txt'],
+            ['QC_SCHEMA_FILE', 'schemaFile', 'prompts/qc_result.schema.json'],
         ],
     },
     {
         id: 'gemini',
         items: [
-            ['SERVICE_ACCOUNT_FILE', 'service-account.json'],
-            ['GCP_PROJECT_ID', ''],
-            ['GCP_LOCATION', 'global'],
-            ['GEMINI_MODEL', 'gemini-2.5-flash'],
-            ['GEMINI_TEMPERATURE', '0'],
+            ['GCP_LOCATION', 'region', 'global'],
+            ['GEMINI_MODEL', 'model', 'gemini-2.5-flash'],
+            ['GEMINI_TEMPERATURE', 'temperature', '0'],
         ],
     },
 ]
 
 const read = (key, fallback) => {
-    const raw = process.env[key]
-    const value = raw == null ? '' : String(raw).trim()
-    return value === '' ? { value: fallback, source: 'default' } : { value, source: 'env' }
+    const value = String(process.env[key] ?? '').trim()
+    return value === '' ? fallback : value
 }
 
 const fileExists = (relative) => {
@@ -46,32 +45,17 @@ const fileExists = (relative) => {
     }
 }
 
-// project ไม่ได้ตั้งใน env: ใช้ project_id จากไฟล์ SA (เหมือน api/gemini_api.js)
-const saProjectId = (saFile) => {
-    try {
-        return JSON.parse(fs.readFileSync(path.join(ROOT, 'key', saFile), 'utf8')).project_id || null
-    } catch {
-        return null
-    }
-}
+const FILE_IDS = new Set(['promptFile', 'schemaFile'])
 
-const getQcConfig = () => {
-    const groups = GROUPS.map((group) => ({
+const getQcConfig = () => ({
+    groups: GROUPS.map((group) => ({
         id: group.id,
-        items: group.items.map(([key, fallback]) => ({ key, ...read(key, fallback) })),
-    }))
-    const byKey = Object.fromEntries(groups.flatMap((g) => g.items.map((i) => [i.key, i])))
-
-    // ตรวจไฟล์ที่อ้างถึงว่ามีอยู่จริง (ไม่ส่งเนื้อหาไฟล์ออกไป)
-    byKey.QC_PROMPT_FILE.exists = fileExists(byKey.QC_PROMPT_FILE.value)
-    byKey.QC_SCHEMA_FILE.exists = fileExists(byKey.QC_SCHEMA_FILE.value)
-    byKey.SERVICE_ACCOUNT_FILE.exists = fileExists(path.join('key', byKey.SERVICE_ACCOUNT_FILE.value))
-    if (byKey.GCP_PROJECT_ID.source === 'default') {
-        const fromSa = saProjectId(byKey.SERVICE_ACCOUNT_FILE.value)
-        byKey.GCP_PROJECT_ID.value = fromSa || ''
-        byKey.GCP_PROJECT_ID.source = fromSa ? 'service-account' : 'missing'
-    }
-    return { groups }
-}
+        items: group.items.map(([envKey, id, fallback]) => {
+            const value = read(envKey, fallback)
+            // ไฟล์ prompt/schema: บอกแค่ว่ามีอยู่จริงไหม ไม่ส่งเนื้อหาไฟล์
+            return FILE_IDS.has(id) ? { id, value, exists: fileExists(value) } : { id, value }
+        }),
+    })),
+})
 
 module.exports = { getQcConfig }
