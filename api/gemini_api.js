@@ -40,16 +40,25 @@ const loadPrompt = () => {
 const nowText = () =>
     new Date().toLocaleString('sv-SE', { timeZone: 'Asia/Bangkok', hour12: false }) + ' (Asia/Bangkok)'
 
+// รายการ turn ลูกค้าที่โค้ดนับให้ (ไม่มีบรรทัด Bot) ให้ Gemini ใช้เป็นคำตอบของการนับ turn
+const customerTurnsText = (customerTurns = []) =>
+    [
+        `Customer turns to evaluate (authoritative, computed by the system; Bot lines are NOT turns). Total = ${customerTurns.length}`,
+        ...customerTurns.map((t) => `[Turn ${t.turn_id}: ${t.speaker} - ${t.text}]`),
+    ].join('\n')
+
 // ส่ง transcript + ไฟล์เสียงใน GCS ให้ Gemini ประเมิน แล้วคืน JSON ตาม schema
-const evaluate = async ({ transcript, audioUri, mimeType = 'audio/wav' }) => {
+const evaluate = async ({ transcript, customerTurns, audioUri, mimeType = 'audio/wav' }) => {
     const { prompt, schema } = loadPrompt()
+    const text = [`Current datetime: ${nowText()}`, `Text transcript:\n${transcript}`]
+    if (customerTurns) text.push(customerTurnsText(customerTurns))
     const response = await getClient().models.generateContent({
         model: GEMINI_MODEL,
         contents: [
             {
                 role: 'user',
                 parts: [
-                    { text: `Current datetime: ${nowText()}\n\nText transcript:\n${transcript}` },
+                    { text: text.join('\n\n') },
                     { fileData: { fileUri: audioUri, mimeType } },
                 ],
             },

@@ -21,7 +21,8 @@ const normalizeTopLevel = (conversations = []) =>
 // แปลงสายเป็นบรรทัด "Bot: ..." / "{ani}: ..." ตามลำดับ turn กลาง (buildConversationTurns)
 // ต่อท้ายด้วยเวลาจากต้นสาย [mm:ss] ให้ Gemini เทียบกับเสียงได้; NO-INPUT ใช้ [after mm:ss]
 // เวลาไว้ท้ายบรรทัด เพราะ prompt ใช้ "ตัวเลข + colon ต้นบรรทัด" ระบุว่าเป็นลูกค้า
-const buildTranscript = (session = {}) => {
+// คืนทั้ง transcript และรายการ turn ลูกค้าที่โค้ดนับเอง (ใช้บอก Gemini ว่าต้องประเมิน turn ไหน และใช้ตรวจผล)
+const buildTranscriptWithTurns = (session = {}) => {
     const customerLabel = session.payload?.ani || 'Customer'
     const callStart = session.created_at ? new Date(session.created_at).getTime() : null
     const stamp = (date, prefix = '') =>
@@ -31,7 +32,7 @@ const buildTranscript = (session = {}) => {
         session.bot_session?.conversations || [],
         normalizeTopLevel(session.conversations),
     )
-    return turns
+    const transcript = turns
         .map((t) =>
             t.sender === 'bot'
                 ? `Bot: ${t.utterance}${stamp(t.at)}`
@@ -40,7 +41,13 @@ const buildTranscript = (session = {}) => {
                   : `${customerLabel}: ${t.utterance}${stamp(t.at)}`,
         )
         .join('\n')
+    const customerTurns = turns
+        .filter((t) => t.sender === 'customer')
+        .map((t) => ({ turn_id: t.turn_id, speaker: customerLabel, text: t.no_input ? NO_INPUT : t.utterance }))
+    return { transcript, customerTurns }
 }
+
+const buildTranscript = (session = {}) => buildTranscriptWithTurns(session).transcript
 
 // https://storage.googleapis.com/<bucket>/<path> -> gs://<bucket>/<path>
 const toGsUri = (url = '') => {
@@ -50,4 +57,4 @@ const toGsUri = (url = '') => {
     return `gs://${match[1]}/${decodeURIComponent(match[2].split('?')[0])}`
 }
 
-module.exports = { buildTranscript, toGsUri, NO_INPUT }
+module.exports = { buildTranscript, buildTranscriptWithTurns, toGsUri, NO_INPUT }

@@ -3,8 +3,9 @@ const log = require('../../utils/log')
 const gemini = require('../../api/gemini_api')
 const QcSession = require('../../models/qc_session_model')
 const { sampleEndedSessions } = require('./session_repo')
-const { buildTranscript, toGsUri } = require('./transcript')
+const { buildTranscriptWithTurns, toGsUri } = require('./transcript')
 const { checkAudio } = require('./audio_check')
+const { findTurnMismatch } = require('./turn_check')
 const {
     QC_JOB_ENABLED = 'false',
     QC_JOB_CRON = '0 * * * *',
@@ -19,7 +20,11 @@ const evaluateWithRetry = async (input) => {
     let lastError
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
         try {
-            return { ...(await gemini.evaluate(input)), attempts: attempt }
+            const output = await gemini.evaluate(input)
+            // ผลที่นับ turn ไม่ตรง (เช่นเอาบรรทัด Bot มาเป็น turn ลูกค้า) ให้ลองใหม่ ไม่บันทึกผลผิด
+            const mismatch = findTurnMismatch(output.result, input.customerTurns)
+            if (mismatch) throw new Error(`turn check failed: ${mismatch}`)
+            return { ...output, attempts: attempt }
         } catch (e) {
             lastError = e
             log.warn({ attempt, error: e.message }, 'QC: gemini evaluate failed')
@@ -40,10 +45,11 @@ const evaluateSession = async (session, jobRunAt) => {
     }
     let update
     try {
-        const transcript = buildTranscript(session)
+        const { transcript, customerTurns } = buildTranscriptWithTurns(session)
         base.transcript = transcript
         const { result, usage, attempts } = await evaluateWithRetry({
             transcript,
+            customerTurns,
             audioUri: toGsUri(session.call_recording_url),
         })
         const audioCheck = checkAudio({ audioTokens: usage.audio_tokens, callDurationSeconds: session.duration })
