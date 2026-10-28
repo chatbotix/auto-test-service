@@ -8,6 +8,7 @@ const {
     GCP_LOCATION = 'global',
     GEMINI_MODEL = 'gemini-2.5-flash',
     GEMINI_TEMPERATURE = '0',
+    GEMINI_TIMEOUT_MS = '120000',
     QC_PROMPT_FILE = 'prompts/qc_judge.txt',
     QC_SCHEMA_FILE = 'prompts/qc_result.schema.json',
 } = process.env
@@ -26,6 +27,9 @@ const getClient = () => {
             project,
             location: GCP_LOCATION,
             googleAuthOptions: { keyFile, scopes: ['https://www.googleapis.com/auth/cloud-platform'] },
+            // SDK ไม่มี timeout เป็นค่าเริ่มต้น request ที่ค้างจะค้างไปตลอดจนรอบตรวจเกินชั่วโมง
+            // ไม่เปิด retryOptions ของ SDK เพราะ retry ทำที่ evaluateWithRetry แล้ว (กันลองซ้ำซ้อนกัน)
+            httpOptions: { timeout: Number(GEMINI_TIMEOUT_MS) },
         })
     }
     return client

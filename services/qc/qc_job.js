@@ -6,6 +6,7 @@ const { sampleEndedSessions } = require('./session_repo')
 const { buildTranscriptWithTurns, toGsUri } = require('./transcript')
 const { checkAudio } = require('./audio_check')
 const { findTurnMismatch } = require('./turn_check')
+const { isRetryable, backoffDelayMs } = require('./retry_policy')
 const {
     QC_JOB_ENABLED = 'false',
     QC_JOB_CRON = '0 * * * *',
@@ -23,10 +24,15 @@ const evaluateWithRetry = async (input) => {
         try {
             output = await gemini.evaluate(input)
         } catch (e) {
-            // retry เฉพาะ error จากการเรียก Gemini (network, quota, response ว่าง)
+            // retry เฉพาะ error จากการเรียก Gemini ที่ลองใหม่แล้วมีโอกาสผ่าน (network, timeout, quota, 5xx, response ว่าง)
             lastError = e
-            log.warn({ attempt, error: e.message }, 'QC: gemini evaluate failed')
-            if (attempt < maxAttempts) await new Promise((r) => setTimeout(r, 2000 * attempt))
+            const retryable = isRetryable(e)
+            log.warn({ attempt, status: e.status, retryable, error: e.message }, 'QC: gemini evaluate failed')
+            if (!retryable) {
+                e.attempts = attempt
+                throw e
+            }
+            if (attempt < maxAttempts) await new Promise((r) => setTimeout(r, backoffDelayMs(attempt, e)))
             continue
         }
         // นับ turn ไม่ตรง (เช่นเอาบรรทัด Bot มาเป็น turn ลูกค้า): ไม่ retry เพื่อประหยัด token, บันทึกเป็น FAILED แทนผลที่ผิด
@@ -135,4 +141,4 @@ const start = () => {
     log.info(`QC: job scheduled "${QC_JOB_CRON}"`)
 }
 
-module.exports = { start, runQcJob, evaluateSession }
+module.exports = { start, runQcJob, evaluateSession, evaluateWithRetry }
